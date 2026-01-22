@@ -4,40 +4,31 @@ import numpy as np
 import time
 import urllib.parse
 
-# 1. Configuração de Interface
-st.set_page_config(layout="wide", page_title="NOAH AGRO | IA PREDICTIVE", initial_sidebar_state="collapsed")
+# 1. Configuração inicial (Deve ser a primeira linha)
+st.set_page_config(layout="wide", page_title="NOAH AGRO | REAL-TIME", initial_sidebar_state="collapsed")
 
-# 2. CSS: Visual Sala de Comando Premium
+# 2. Estilo Visual Sala de Comando (Fundo Preto / Letras Brancas)
 st.markdown("""
 <style>
     .stApp { background-color: #000000; }
     h1, h2, h3, h4, p, span, b, small, label { color: #FFFFFF !important; font-family: 'Inter', sans-serif; }
-    .titulo-noah { color: #00FF7F; text-align: center; font-size: 2.2rem; text-shadow: 0 0 15px #00FF7F; padding: 10px; }
-    .card-alerta { padding: 18px; border-radius: 12px; margin-bottom: 12px; background-color: #111111; border: 1px solid #333; }
-    .critico { border-left: 12px solid #FF0000; box-shadow: -5px 0 15px rgba(255, 0, 0, 0.3); }
+    .titulo-noah { color: #00FF7F; text-align: center; font-size: 2rem; text-shadow: 0 0 10px #00FF7F; padding-bottom: 20px; }
+    
+    .card-alerta { padding: 15px; border-radius: 12px; margin-bottom: 10px; background-color: #111111; border: 1px solid #333; }
+    .critico { border-left: 12px solid #FF0000; }
     .alerta { border-left: 12px solid #FF8C00; }
     .normal { border-left: 12px solid #00FF7F; }
-    .ia-badge { background: linear-gradient(90deg, #00FF7F, #0077ff); color: white !important; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; }
-    .risk-bar-container { background-color: #222; border-radius: 10px; height: 12px; width: 100%; margin-top: 8px; border: 1px solid #444; }
-    .risk-bar-fill { height: 100%; border-radius: 10px; transition: width 0.8s ease-in-out; }
-    .sensor-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; background: #000; padding: 10px; border-radius: 8px; }
-    .sensor-val { font-size: 1.1rem; font-weight: bold; color: #00FF7F !important; }
+    
+    .ia-badge { background: linear-gradient(90deg, #00FF7F, #0077ff); color: white !important; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+    .sensor-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .sensor-val { font-weight: bold; color: #00FF7F !important; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1 class='titulo-noah'>NOAH AGRO - CONTROLE OPERACIONAL PREDITIVO</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='titulo-noah'>NOAH AGRO - MONITORAMENTO PREDITIVO</h1>", unsafe_allow_html=True)
 
-# 3. Lógica de IA e Priorização
-def calcular_risco_ia(umid, ph, pluv):
-    base_risco = (75 - umid) * 0.6 + (abs(6.5 - ph) * 12)
-    if pluv < 5: base_risco += 20
-    risco_final = max(5, min(int(base_risco), 98))
-    
-    if risco_final > 70: return risco_final, "CRÍTICO", "#FF0000", "critico"
-    if risco_final > 40: return risco_final, "MODERADO", "#FF8C00", "alerta"
-    return risco_final, "BAIXO", "#00FF7F", "normal"
-
-def obter_dados():
+# 3. Lógica de IA e Geração de Dados (Muda a cada refresh)
+def gerar_dados_vivos():
     setores = [
         {"nome": "SETOR NORTE", "lat": -22.90, "lon": -43.20, "gestor": "RICARDO", "tel": "5521999999999"},
         {"nome": "SETOR SUL", "lat": -22.95, "lon": -43.25, "gestor": "ANA", "tel": "5521888888888"},
@@ -46,52 +37,61 @@ def obter_dados():
     ]
     data = []
     for s in setores:
-        u, p, ph = np.random.randint(15, 80), np.random.randint(0, 40), round(np.random.uniform(4.5, 8.5), 1)
-        r_val, r_txt, r_cor, r_cls = calcular_risco_ia(u, ph, p)
-        peso = 1 if r_val > 70 else (2 if r_val > 40 else 3)
-        s.update({"umid": u, "pluv": p, "ph": ph, "risco": r_val, "risco_txt": r_txt, "risco_cor": r_cor, "classe": r_cls, "peso": peso})
+        # Valores aleatórios para simular sensores em tempo real
+        u = np.random.randint(15, 85)
+        p = np.random.randint(0, 50)
+        ph = round(np.random.uniform(4.5, 8.5), 1)
+        
+        # Cálculo de Risco Preditivo
+        risco = max(5, min(98, int((80 - u) * 0.8 + (abs(6.5 - ph) * 15))))
+        
+        if risco > 70: info = ["CRÍTICO", "#FF0000", "critico", 1]
+        elif risco > 40: info = ["MODERADO", "#FF8C00", "alerta", 2]
+        else: info = ["NORMAL", "#00FF7F", "normal", 3]
+            
+        s.update({"umid": u, "pluv": p, "ph": ph, "risco": risco, "status": info[0], "cor": info[1], "classe": info[2], "peso": info[3]})
         data.append(s)
+    # Ordenar por prioridade (Peso 1 primeiro)
     return sorted(data, key=lambda x: x['peso'])
 
-df_final = obter_dados()
+# 4. Execução e Layout
+dados = gerar_dados_vivos()
+col_mapa, col_cards = st.columns([1.2, 1])
 
-# 4. Interface
-c1, c2 = st.columns([1.3, 1])
+with col_mapa:
+    st.markdown("### 🌐 LOCALIZAÇÃO EM TEMPO REAL")
+    df_mapa = pd.DataFrame(dados)
+    st.map(df_mapa, latitude='lat', longitude='lon', color='cor', size=500)
 
-with c1:
-    st.markdown("### 🌐 MONITORAMENTO GEOGRÁFICO")
-    map_df = pd.DataFrame(df_final)
-    st.map(map_df, latitude='lat', longitude='lon', color='risco_cor', size=550)
-
-with c2:
-    st.markdown("### 🧠 FILA DE INTERVENÇÃO (IA)")
-    for d in df_final:
-        # Criando o conteúdo HTML fora da f-string para evitar conflito de símbolos
-        card_html = f"""
+with col_cards:
+    st.markdown("### 🚨 ALERTAS E GESTÃO")
+    for d in dados:
+        # Card Visual
+        st.markdown(f"""
             <div class="card-alerta {d['classe']}">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <b style="font-size: 1.1rem;">{d['nome']}</b>
+                <div style="display: flex; justify-content: space-between;">
+                    <b>{d['nome']}</b>
                     <span class="ia-badge">IA PREDICT</span>
                 </div>
-                <div style="margin-top:12px;">
-                    <small style="color:#AAA !important;">RISCO DE INCIDENTE EM 24H: <b>{d['risco']}%</b></small>
-                    <div class="risk-bar-container">
-                        <div class="risk-bar-fill" style="width: {d['risco']}%; background-color: {d['risco_cor']};"></div>
+                <div style="margin-top:8px;">
+                    <small>PROBABILIDADE DE RISCO (24H): {d['risco']}%</small>
+                    <div style="background:#222; height:8px; border-radius:5px; margin-top:5px;">
+                        <div style="width:{d['risco']}%; background:{d['cor']}; height:8px; border-radius:5px;"></div>
                     </div>
                 </div>
                 <div class="sensor-grid">
                     <div><small>UMID.</small><br><span class="sensor-val">{d['umid']}%</span></div>
                     <div><small>PH</small><br><span class="sensor-val">{d['ph']}</span></div>
-                    <div><small>STATUS</small><br><span style="color:{d['risco_cor']} !important; font-weight:bold;">{d['risco_txt']}</span></div>
+                    <div><small>STATUS</small><br><span style="color:{d['cor']} !important;">{d['status']}</span></div>
                 </div>
             </div>
-        """
-        st.markdown(card_html, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
         
+        # BOTÃO DE CONTATO (Aparece se o risco for acima de 40%)
         if d['risco'] > 40:
-            msg = urllib.parse.quote(f"🚨 ALERTA PREDITIVO NOAH: {d['nome']} apresenta risco de {d['risco']}%. Favor verificar.")
-            st.link_button(f"📲 CONTATAR GESTOR: {d['gestor']}", f"https://wa.me/{d['tel']}?text={msg}", use_container_width=True)
+            texto = urllib.parse.quote(f"🚨 ALERTA NOAH AGRO: {d['nome']} com risco de {d['risco']}%. Status: {d['status']}.")
+            st.link_button(f"📲 FALAR COM {d['gestor']}", f"https://wa.me/{d['tel']}?text={texto}", use_container_width=True)
 
-# 5. Refresh automático (8 segundos)
+# 5. LOOP DE ATUALIZAÇÃO (Faz o sistema "viver")
 time.sleep(8)
-st
+st.rerun()
