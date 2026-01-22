@@ -7,29 +7,19 @@ import urllib.parse
 # 1. Configuração de Interface
 st.set_page_config(layout="wide", page_title="NOAH AGRO | IA PREDICTIVE", initial_sidebar_state="collapsed")
 
-# 2. CSS: Visual Sala de Comando Premium (Sem botões extras)
+# 2. CSS: Visual Sala de Comando Premium
 st.markdown("""
 <style>
     .stApp { background-color: #000000; }
     h1, h2, h3, h4, p, span, b, small, label { color: #FFFFFF !important; font-family: 'Inter', sans-serif; }
     .titulo-noah { color: #00FF7F; text-align: center; font-size: 2.2rem; text-shadow: 0 0 15px #00FF7F; padding: 10px; }
-    
-    /* Quadrantes de Alerta */
     .card-alerta { padding: 18px; border-radius: 12px; margin-bottom: 12px; background-color: #111111; border: 1px solid #333; }
     .critico { border-left: 12px solid #FF0000; box-shadow: -5px 0 15px rgba(255, 0, 0, 0.3); }
     .alerta { border-left: 12px solid #FF8C00; }
     .normal { border-left: 12px solid #00FF7F; }
-    
-    /* Badge de IA */
-    .ia-badge { 
-        background: linear-gradient(90deg, #00FF7F, #0077ff); 
-        color: white !important; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold;
-    }
-    
-    /* Barra de Risco Preditivo */
+    .ia-badge { background: linear-gradient(90deg, #00FF7F, #0077ff); color: white !important; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; }
     .risk-bar-container { background-color: #222; border-radius: 10px; height: 12px; width: 100%; margin-top: 8px; border: 1px solid #444; }
     .risk-bar-fill { height: 100%; border-radius: 10px; transition: width 0.8s ease-in-out; }
-    
     .sensor-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; background: #000; padding: 10px; border-radius: 8px; }
     .sensor-val { font-size: 1.1rem; font-weight: bold; color: #00FF7F !important; }
 </style>
@@ -76,9 +66,32 @@ with c1:
 with c2:
     st.markdown("### 🧠 FILA DE INTERVENÇÃO (IA)")
     for d in df_final:
-        st.markdown(f"""
+        # Criando o conteúdo HTML fora da f-string para evitar conflito de símbolos
+        card_html = f"""
             <div class="card-alerta {d['classe']}">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <b style="font-size: 1.1rem;">{d['nome']}</b>
                     <span class="ia-badge">IA PREDICT</span>
                 </div>
+                <div style="margin-top:12px;">
+                    <small style="color:#AAA !important;">RISCO DE INCIDENTE EM 24H: <b>{d['risco']}%</b></small>
+                    <div class="risk-bar-container">
+                        <div class="risk-bar-fill" style="width: {d['risco']}%; background-color: {d['risco_cor']};"></div>
+                    </div>
+                </div>
+                <div class="sensor-grid">
+                    <div><small>UMID.</small><br><span class="sensor-val">{d['umid']}%</span></div>
+                    <div><small>PH</small><br><span class="sensor-val">{d['ph']}</span></div>
+                    <div><small>STATUS</small><br><span style="color:{d['risco_cor']} !important; font-weight:bold;">{d['risco_txt']}</span></div>
+                </div>
+            </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
+        
+        if d['risco'] > 40:
+            msg = urllib.parse.quote(f"🚨 ALERTA PREDITIVO NOAH: {d['nome']} apresenta risco de {d['risco']}%. Favor verificar.")
+            st.link_button(f"📲 CONTATAR GESTOR: {d['gestor']}", f"https://wa.me/{d['tel']}?text={msg}", use_container_width=True)
+
+# 5. Refresh automático (8 segundos)
+time.sleep(8)
+st
